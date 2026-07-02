@@ -10,13 +10,13 @@ uv run oneshot --help
 
 ## 下载数据集
 
-下载 MNIST 数据集到默认 `DATA_DIR`:
+下载 MNIST 数据集到默认 `DATA_DIR/mnist`:
 
 ```bash
 uv run oneshot download mnist
 ```
 
-也可以指定下载目录:
+也可以指定下载根目录,文件仍会写入该目录下的 `mnist/` 子目录:
 
 ```bash
 uv run oneshot download mnist --data-dir data

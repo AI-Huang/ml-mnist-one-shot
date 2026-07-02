@@ -64,7 +64,7 @@ def run_download_mnist(args):
 
     data_dir = args.data_dir or DATASET_DIR
     mnist(data_dir)
-    print(f"MNIST dataset ready in {data_dir}")
+    print(f"MNIST dataset ready in {data_dir / 'mnist'}")
 
 
 def run(argv=None):

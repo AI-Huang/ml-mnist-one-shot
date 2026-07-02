@@ -7,7 +7,7 @@ import numpy as np
 
 from utils import download_url, get_one_hot
 
-MNIST_BASE_URL = "http://yann.lecun.com/exdb/mnist"
+MNIST_BASE_URL = "https://storage.googleapis.com/cvdf-datasets/mnist"
 MNIST_FILES = {
     "train_images": (
         "train-images-idx3-ubyte.gz",
@@ -29,7 +29,7 @@ MNIST_FILES = {
 
 
 def _download_mnist_files(data_dir):
-    data_dir = Path(data_dir)
+    data_dir = Path(data_dir) / "mnist"
     paths = {}
     for key, (filename, checksum) in MNIST_FILES.items():
         url = f"{MNIST_BASE_URL}/{filename}"

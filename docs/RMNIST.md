@@ -9,7 +9,7 @@
 | 项目 | 说明 |
 | --- | --- |
 | 下载文件 | `train-images-idx3-ubyte.gz`, `train-labels-idx1-ubyte.gz`, `t10k-images-idx3-ubyte.gz`, `t10k-labels-idx1-ubyte.gz` |
-| 本地缓存 | `DATA_DIR`,默认经仓库 `data` symlink 指向外部运行数据目录 |
+| 本地缓存 | `DATA_DIR/mnist`,默认经仓库 `data` symlink 指向外部运行数据目录 |
 | 数据格式 | gzip 压缩 IDX |
 | 图像尺寸 | `28 x 28` 灰度图 |
 | 单样本形状 | 展平为 `784` 维向量 |
