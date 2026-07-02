@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,9 +7,13 @@ import torch.nn as nn
 import torch.optim as optim
 
 from models.nets import Discriminator, Generator
+from settings import CHECKPOINT_DIR, OUTPUT_DIR
 
 
-def plot2img(tensors):
+def plot2img(tensors, path=OUTPUT_DIR / "gan_data.png"):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
     img = tensors.detach().numpy()
     plt.figure()
     for i, x in enumerate(img):
@@ -17,7 +21,7 @@ def plot2img(tensors):
         x_ = (x * 255.0).astype(int).reshape((28, 28))
         plt.imshow(x_, cmap="gray")
         plt.axis("off")
-    plt.savefig("./gan_data.png")
+    plt.savefig(path)
     plt.close()
 
 
@@ -28,7 +32,8 @@ def gan_augment(x, y, seed, n_samples=None):
     lr = 3e-4
     num_ep = 300
     z_dim = 100
-    model_path = "./gan_checkpoint_%d.pth" % seed
+    model_path = CHECKPOINT_DIR / f"gan_checkpoint_{seed}.pth"
+    model_path.parent.mkdir(parents=True, exist_ok=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     G = Generator(z_dim).to(device)
@@ -41,7 +46,7 @@ def gan_augment(x, y, seed, n_samples=None):
     train_x = torch.Tensor(x)
     train_labels = torch.LongTensor(y)
 
-    if os.path.exists(model_path):
+    if model_path.exists():
         print("load trained GAN...")
         state = torch.load(model_path)
         G.load_state_dict(state["G"])

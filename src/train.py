@@ -1,7 +1,6 @@
 import argparse
 
 import Augmentor
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,7 +14,9 @@ from sklearn.svm import SVC
 
 from datasets.rmnist import make_dataset
 from models.nets import MnistResNet, SiameseNet
+from settings import OUTPUT_DIR
 from tools.gan_augment import gan_augment
+from visualization import plot_samples
 
 args = None
 
@@ -27,17 +28,6 @@ def build_parser():
     parser.add_argument("--num_ep", type=int, default=301)
     parser.add_argument("--gan_ratio", type=float, default=0)
     return parser
-
-
-def plot_samples(samples, path):
-    plt.figure()
-    for i, x in enumerate(samples):
-        plt.subplot(len(samples) // 10, 10, i + 1)
-        x_ = (x * 255).astype(int).reshape((28, 28))
-        plt.imshow(x_, cmap="gray")
-        plt.axis("off")
-    plt.savefig(path)
-    plt.close()
 
 
 def statistical_ml(dataset):
@@ -77,7 +67,7 @@ def deep_learning(dataset):
         train_x, train_y, test_x, test_y = dataset
         train_x = train_x.reshape((-1, 28, 28, 1))
         test_x = test_x.reshape((-1, 28, 28, 1))
-        plot_samples(train_x, "./origin-%d.png" % args.seed)
+        plot_samples(train_x, OUTPUT_DIR / f"origin-{args.seed}.png")
 
         if data_augmentation:
             n_samples = 1024
@@ -96,7 +86,7 @@ def deep_learning(dataset):
 
             train_x, train_y = next(generator)
             train_x = np.clip(train_x, 0, 1)
-            plot_samples(train_x[:50], "./data_augmentation.png")
+            plot_samples(train_x[:50], OUTPUT_DIR / "data_augmentation.png")
 
         if args.gan_ratio > 0:
             n_samples = int(args.gan_ratio * len(train_x))

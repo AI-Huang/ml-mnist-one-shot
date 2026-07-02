@@ -1,6 +1,35 @@
-*.pth
+# Local environment
+.env
+.env.*
+!.env.example
+.python-version
+.venv/
+
+# Editor and OS files
+.vscode/
 *.swp
+*.swo
+.DS_Store
+
+# Python caches and test/tool caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Runtime data and generated experiment outputs
+/data
+*.pth
+*.pt
+*.ckpt
 *.png
-__pycache__
-data
-.venv

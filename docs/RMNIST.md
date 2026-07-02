@@ -51,7 +51,38 @@ train_y = full_train_y[train_idx]
 
 随机抽样由 `--seed` 控制。训练入口会设置 `np.random.seed(args.seed)`,因此同一个 seed 会得到相同的 10 张 one-shot 样本。
 
-## 3. 几何增强构造训练集
+## 3. 运行命令
+
+项目命令统一通过 `uv run oneshot` 执行。
+
+查看可用子命令:
+
+```bash
+uv run oneshot --help
+```
+
+训练 one-shot MNIST 模型:
+
+```bash
+uv run oneshot train --seed 31
+```
+
+可视化当前 seed 对应的 10 张 one-shot 训练样本:
+
+```bash
+uv run oneshot visualize --seed 31 --output data/outputs/training-samples.png
+```
+
+常用训练参数:
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `--seed` | `31` | 控制 one-shot 样本抽取、增强和训练随机性 |
+| `--lr` | `3e-3` | 深度学习训练学习率 |
+| `--num_ep` | `301` | 训练 epoch 数 |
+| `--gan_ratio` | `0` | cGAN 额外生成样本比例 |
+
+## 4. 几何增强构造训练集
 
 深度学习训练前,`preprocess()` 会先将 `train_x` 从 `(N, 784)` 还原为 `(N, 28, 28, 1)`,再使用 Augmentor 将 10 张样本扩增为 1024 张。
 
@@ -71,7 +102,7 @@ train_y = full_train_y[train_idx]
 | `train_x` | `(1024, 28, 28, 1)` | 增强后的训练图像 |
 | `train_y` | `(1024,)` | 对应标签 |
 
-## 4. cGAN 生成增强
+## 5. cGAN 生成增强
 
 当启动参数 `--gan_ratio > 0` 时,会继续调用 `gan_augment()` 生成额外样本。生成数量为:
 
@@ -88,7 +119,7 @@ train_y = np.concatenate([train_y, a_y])
 
 如果 `gan_ratio = 0.1`,几何增强后的 `1024` 张样本会额外增加 `102` 张 cGAN 样本,训练集总量约为 `1126` 张。
 
-## 5. 模型输入格式
+## 6. 模型输入格式
 
 训练前图像会从 NHWC 转为 PyTorch 常用的 NCHW:
 
@@ -108,7 +139,7 @@ test_x = np.transpose(test_x, (0, 3, 1, 2))
 
 使用 ResNet 训练时,图像会进一步通过 `F.interpolate(..., size=224)` 上采样到 `224 x 224`。
 
-## 6. 构造流程总览
+## 7. 构造流程总览
 
 ```mermaid
 flowchart TD
@@ -123,7 +154,7 @@ flowchart TD
     B --> I["完整 test_set<br/>10000 张测试样本"]
 ```
 
-## 7. 关键约束
+## 8. 关键约束
 
 - 训练集的核心约束是每个类别只有 1 张原始样本。
 - 测试集不做 one-shot 采样,始终使用完整 `test_set`。

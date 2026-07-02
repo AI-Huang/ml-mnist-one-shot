@@ -1,10 +1,11 @@
 import gzip
-import os
 import pickle
 import sys
+from pathlib import Path
 
 import numpy as np
 
+from settings import DATA_DIR
 from utils import download_url, get_one_hot
 
 
@@ -13,10 +14,10 @@ def mnist(data_dir, one_hot=False):
     url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
     checksum = "a02cd19f81d51c426d7ca14024243ce9"
 
-    save_path = os.path.join(data_dir, url.split("/")[-1])
+    save_path = Path(data_dir) / url.split("/")[-1]
     print("Preparing MNIST dataset ...")
     try:
-        download_url(url, save_path, checksum)
+        download_url(url, str(save_path), checksum)
     except Exception as e:
         print("Error downloading dataset: %s" % str(e))
         sys.exit(1)
@@ -35,7 +36,7 @@ def mnist(data_dir, one_hot=False):
 
 def make_dataset():
     """get train_x/train_y/test_x/test_y from the dataset"""
-    train_set, _, test_set = mnist("./data")
+    train_set, _, test_set = mnist(DATA_DIR)
     test_x, test_y = test_set
     full_train_x, full_train_y = train_set
 
