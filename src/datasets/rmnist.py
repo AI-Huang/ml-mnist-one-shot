@@ -9,7 +9,9 @@ def make_dataset():
     test_x, test_y = test_set
     full_train_x, full_train_y = train_set
 
-    train_x, train_y, train_idx = random_choose_one(full_train_x, full_train_y)
+    train_x, train_y, train_idx = random_choose_one(
+        full_train_x, full_train_y, shuffle=False
+    )
     print("train sample idx: ", train_idx)
 
     return train_x, train_y, test_x, test_y
