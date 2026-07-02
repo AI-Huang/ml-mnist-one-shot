@@ -1,12 +1,12 @@
 import numpy as np
 
 from datasets.mnist import mnist
-from settings import DATA_DIR
+from settings import DATASET_DIR
 
 
 def make_dataset():
     """get train_x/train_y/test_x/test_y from the dataset"""
-    train_set, _, test_set = mnist(DATA_DIR)
+    train_set, _, test_set = mnist(DATASET_DIR)
     test_x, test_y = test_set
     full_train_x, full_train_y = train_set
 

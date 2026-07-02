@@ -9,3 +9,4 @@ if not DATA_DIR.is_absolute():
 
 OUTPUT_DIR = DATA_DIR / "outputs"
 CHECKPOINT_DIR = DATA_DIR / "checkpoints"
+DATASET_DIR = DATA_DIR / "dataset"

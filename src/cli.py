@@ -39,7 +39,7 @@ def build_parser():
         "--data-dir",
         type=Path,
         default=None,
-        help="Directory for downloaded data; defaults to settings.DATA_DIR",
+        help="Directory for downloaded datasets; defaults to settings.DATASET_DIR",
     )
     mnist_parser.set_defaults(handler=run_download_mnist)
 
@@ -60,9 +60,9 @@ def run_visualize(args):
 
 def run_download_mnist(args):
     from datasets.mnist import mnist
-    from settings import DATA_DIR
+    from settings import DATASET_DIR
 
-    data_dir = args.data_dir or DATA_DIR
+    data_dir = args.data_dir or DATASET_DIR
     mnist(data_dir)
     print(f"MNIST dataset ready in {data_dir}")
 
