@@ -7,7 +7,7 @@ import numpy as np
 
 from utils import download_url, get_one_hot
 
-MNIST_BASE_URL = "https://storage.googleapis.com/cvdf-datasets/mnist"
+MNIST_BASE_URL = "http://yann.lecun.com/exdb/mnist"
 MNIST_FILES = {
     "train_images": (
         "train-images-idx3-ubyte.gz",
