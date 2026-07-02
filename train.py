@@ -13,9 +13,9 @@ from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
+from datasets.rmnist import make_dataset
 from models.nets import MnistResNet, SiameseNet
 from tools.gan_augment import gan_augment
-from tools.utils import make_dataset
 
 
 def plot_samples(samples, path):
