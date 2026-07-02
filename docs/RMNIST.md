@@ -4,24 +4,24 @@
 
 ## 1. 原始数据
 
-原始数据来自 MNIST pickle 文件:
+原始数据来自 MNIST IDX gzip 文件:
 
 | 项目 | 说明 |
 | --- | --- |
-| 下载文件 | `mnist.pkl.gz` |
-| 本地缓存 | `./data/mnist.pkl.gz` |
-| 数据格式 | gzip 压缩 pickle |
+| 下载文件 | `train-images-idx3-ubyte.gz`, `train-labels-idx1-ubyte.gz`, `t10k-images-idx3-ubyte.gz`, `t10k-labels-idx1-ubyte.gz` |
+| 本地缓存 | `DATA_DIR`,默认经仓库 `data` symlink 指向外部运行数据目录 |
+| 数据格式 | gzip 压缩 IDX |
 | 图像尺寸 | `28 x 28` 灰度图 |
 | 单样本形状 | 展平为 `784` 维向量 |
 | 像素范围 | `[0, 1]` |
 | 类别数 | 10 类,标签为 `0` 到 `9` |
 
-加载后得到三个子集:
+加载后保持原项目接口,得到三个子集:
 
 | 子集 | 样本数 | 用途 |
 | --- | --- | --- |
-| `train_set` | 50,000 | one-shot 采样来源 |
-| `valid_set` | 10,000 | 当前流程未使用 |
+| `train_set` | 50,000 | one-shot 采样来源,来自官方训练集前 50,000 张 |
+| `valid_set` | 10,000 | 当前流程未使用,来自官方训练集后 10,000 张 |
 | `test_set` | 10,000 | 完整测试集 |
 
 ## 2. One-Shot 训练集构造
@@ -51,38 +51,7 @@ train_y = full_train_y[train_idx]
 
 随机抽样由 `--seed` 控制。训练入口会设置 `np.random.seed(args.seed)`,因此同一个 seed 会得到相同的 10 张 one-shot 样本。
 
-## 3. 运行命令
-
-项目命令统一通过 `uv run oneshot` 执行。
-
-查看可用子命令:
-
-```bash
-uv run oneshot --help
-```
-
-训练 one-shot MNIST 模型:
-
-```bash
-uv run oneshot train --seed 31
-```
-
-可视化当前 seed 对应的 10 张 one-shot 训练样本:
-
-```bash
-uv run oneshot visualize --seed 31 --output data/outputs/training-samples.png
-```
-
-常用训练参数:
-
-| 参数 | 默认值 | 说明 |
-| --- | --- | --- |
-| `--seed` | `31` | 控制 one-shot 样本抽取、增强和训练随机性 |
-| `--lr` | `3e-3` | 深度学习训练学习率 |
-| `--num_ep` | `301` | 训练 epoch 数 |
-| `--gan_ratio` | `0` | cGAN 额外生成样本比例 |
-
-## 4. 几何增强构造训练集
+## 3. 几何增强构造训练集
 
 深度学习训练前,`preprocess()` 会先将 `train_x` 从 `(N, 784)` 还原为 `(N, 28, 28, 1)`,再使用 Augmentor 将 10 张样本扩增为 1024 张。
 
@@ -102,7 +71,7 @@ uv run oneshot visualize --seed 31 --output data/outputs/training-samples.png
 | `train_x` | `(1024, 28, 28, 1)` | 增强后的训练图像 |
 | `train_y` | `(1024,)` | 对应标签 |
 
-## 5. cGAN 生成增强
+## 4. cGAN 生成增强
 
 当启动参数 `--gan_ratio > 0` 时,会继续调用 `gan_augment()` 生成额外样本。生成数量为:
 
@@ -119,7 +88,7 @@ train_y = np.concatenate([train_y, a_y])
 
 如果 `gan_ratio = 0.1`,几何增强后的 `1024` 张样本会额外增加 `102` 张 cGAN 样本,训练集总量约为 `1126` 张。
 
-## 6. 模型输入格式
+## 5. 模型输入格式
 
 训练前图像会从 NHWC 转为 PyTorch 常用的 NCHW:
 
@@ -139,11 +108,11 @@ test_x = np.transpose(test_x, (0, 3, 1, 2))
 
 使用 ResNet 训练时,图像会进一步通过 `F.interpolate(..., size=224)` 上采样到 `224 x 224`。
 
-## 7. 构造流程总览
+## 6. 构造流程总览
 
 ```mermaid
 flowchart TD
-    A["MNIST 原始数据<br/>mnist.pkl.gz"] --> B["加载 train / valid / test"]
+    A["MNIST IDX 原始数据<br/>4 个 gzip 文件"] --> B["解析 IDX<br/>train / valid / test"]
     B --> C["每类随机抽 1 张<br/>共 10 张训练样本"]
     C --> D["Augmentor 几何增强<br/>10 张扩增到 1024 张"]
     D --> E{"gan_ratio > 0"}
@@ -154,7 +123,7 @@ flowchart TD
     B --> I["完整 test_set<br/>10000 张测试样本"]
 ```
 
-## 8. 关键约束
+## 7. 关键约束
 
 - 训练集的核心约束是每个类别只有 1 张原始样本。
 - 测试集不做 one-shot 采样,始终使用完整 `test_set`。

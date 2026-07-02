@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 
 def build_parser():
@@ -24,6 +25,24 @@ def build_parser():
     )
     visualize_parser.set_defaults(handler=run_visualize)
 
+    download_parser = subparsers.add_parser(
+        "download",
+        help="Download datasets",
+    )
+    download_subparsers = download_parser.add_subparsers(dest="dataset", required=True)
+
+    mnist_parser = download_subparsers.add_parser(
+        "mnist",
+        help="Download the MNIST dataset",
+    )
+    mnist_parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help="Directory for downloaded data; defaults to settings.DATA_DIR",
+    )
+    mnist_parser.set_defaults(handler=run_download_mnist)
+
     return parser
 
 
@@ -39,7 +58,16 @@ def run_visualize(args):
     visualize_main(args)
 
 
-def main(argv=None):
+def run_download_mnist(args):
+    from datasets.mnist import mnist
+    from settings import DATA_DIR
+
+    data_dir = args.data_dir or DATA_DIR
+    mnist(data_dir)
+    print(f"MNIST dataset ready in {data_dir}")
+
+
+def run(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
     args.handler(args)

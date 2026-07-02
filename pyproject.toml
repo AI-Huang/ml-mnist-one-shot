@@ -12,14 +12,14 @@ dependencies = [
 ]
 
 [project.scripts]
-oneshot = "oneshot:main"
+oneshot = "main:main"
 
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["oneshot", "settings", "train", "visualization"]
+py-modules = ["cli", "main", "settings", "train", "visualization"]
 
 [tool.setuptools.package-dir]
 "" = "src"
