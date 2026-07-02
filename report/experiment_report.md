@@ -57,7 +57,7 @@
 | ④ 生成式增强 | 几何增强 + cGAN 生成样本 | LeNet + Dropout |
 | ⑤ 迁移学习 | 几何增强 + cGAN + ImageNet 预训练骨干 | 预训练 ResNet |
 
-> **代码-文档一致性说明**:README 将阶段 ⑤ 记录为 *pretrained ResNet-34*,但当前 [`../models/nets.py`](../models/nets.py) 中 `MnistResNet` 实际使用 `resnet18(pretrained=True)`。二者存在不一致,复现时以代码为准或按需切换骨干网络。
+> **代码-文档一致性说明**:README 将阶段 ⑤ 记录为 *pretrained ResNet-34*,但当前 [`../src/models/nets.py`](../src/models/nets.py) 中 `MnistResNet` 实际使用 `resnet18(pretrained=True)`。二者存在不一致,复现时以代码为准或按需切换骨干网络。
 
 ---
 
@@ -151,16 +151,16 @@ xychart-beta
 
 ## 7. 复现方式
 
-当前 [`../train.py`](../train.py) 的 `main()` 默认仅运行 `deep_learning`(几何增强 + `MnistResNet`)。复现不同阶段需相应调整:
+当前 [`../src/train.py`](../src/train.py) 的 `main()` 默认仅运行 `deep_learning`(几何增强 + `MnistResNet`)。复现不同阶段需相应调整:
 
 ```bash
 # 阶段 ⑤:几何增强 + cGAN(0.1) + 预训练 ResNet(默认模型)
-python train.py --seed 31 --gan_ratio 0.1
-python train.py --seed 317 --gan_ratio 0.1
-python train.py --seed 31731 --gan_ratio 0.1
+python src/train.py --seed 31 --gan_ratio 0.1
+python src/train.py --seed 317 --gan_ratio 0.1
+python src/train.py --seed 31731 --gan_ratio 0.1
 
 # 阶段 ③:仅几何增强(不加 GAN)
-python train.py --seed 31 --gan_ratio 0
+python src/train.py --seed 31 --gan_ratio 0
 ```
 
 | 命令行参数 | 默认值 | 说明 |
@@ -179,7 +179,7 @@ python train.py --seed 31 --gan_ratio 0
 
 ## 8. 局限与后续工作
 
-- **Siamese 网络存在缺陷**:`siamese_net` 在 `train.py` 中被标注为 `buggy`,当前未纳入有效对比。
+- **Siamese 网络存在缺陷**:`siamese_net` 在 `src/train.py` 中被标注为 `buggy`,当前未纳入有效对比。
 - **文档-代码不一致**:README 记为 ResNet-34,代码实为 resnet18(见 §3 说明),建议统一。
 - **验证集闲置**:`valid_set` 未用于超参搜索或早停。
 - **下载源风险**:`deeplearning.net` 已不稳定,建议迁移到 `torchvision.datasets.MNIST`。

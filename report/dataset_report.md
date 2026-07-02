@@ -6,9 +6,10 @@
 
 数据相关实现主要分布在:
 
-- [`../tools/utils.py`](../tools/utils.py) — 下载、加载、one-shot 采样
-- [`../train.py`](../train.py) — 预处理、几何增强、张量化
-- [`../tools/gan_augment.py`](../tools/gan_augment.py) — cGAN 生成增强
+- [`../src/utils/__init__.py`](../src/utils/__init__.py) — 下载与校验工具
+- [`../src/datasets/rmnist.py`](../src/datasets/rmnist.py) — MNIST 加载与 one-shot 采样
+- [`../src/train.py`](../src/train.py) — 预处理、几何增强、张量化
+- [`../src/tools/gan_augment.py`](../src/tools/gan_augment.py) — cGAN 生成增强
 
 ---
 
@@ -69,7 +70,7 @@ train_x, train_y = full_train_x[train_idx], full_train_y[train_idx]
 
 ### 5.1 几何变换增强(Augmentor)
 
-由于 10 张样本无法支撑深度网络训练,`train.py` 的 `preprocess()` 使用 [`Augmentor`](https://github.com/mdbloice/Augmentor) 将 10 张样本扩增为 **1024 张**:
+由于 10 张样本无法支撑深度网络训练,`src/train.py` 的 `preprocess()` 使用 [`Augmentor`](https://github.com/mdbloice/Augmentor) 将 10 张样本扩增为 **1024 张**:
 
 | 变换 | 触发概率 | 参数 |
 | --- | --- | --- |
