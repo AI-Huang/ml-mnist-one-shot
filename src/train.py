@@ -1,4 +1,9 @@
 import argparse
+import json
+from dataclasses import dataclass, replace
+from datetime import datetime
+from pathlib import Path
+from typing import ClassVar
 
 import Augmentor
 import numpy as np
@@ -14,18 +19,90 @@ from sklearn.svm import SVC
 from datasets.rmnist import make_dataset as make_rmnist_dataset
 from models.nets import LeNet, MnistResNet, SiameseNet
 from pipelines.deep_learning import fit_and_evaluate, preprocess_dataset
+from settings import DATA_DIR
 
-args = None
+
+@dataclass(frozen=True)
+class TrainingConfig:
+    supported_datasets: ClassVar[tuple[str, ...]] = ("rmnist",)
+    supported_models: ClassVar[tuple[str, ...]] = ("resnet", "lenet")
+    experiment_root: ClassVar[Path] = DATA_DIR / "experiments"
+
+    dataset: str = "rmnist"
+    model: str = "resnet"
+    seed: int = 31
+    lr: float = 3e-3
+    num_ep: int = 301
+    gan_ratio: float = 0
+    data_augmentation: bool = True
+    experiment_dir: Path | None = None
+
+    @classmethod
+    def from_args(cls, args):
+        return cls(
+            dataset=args.dataset,
+            model=args.model,
+            seed=args.seed,
+            lr=args.lr,
+            num_ep=args.num_ep,
+            gan_ratio=args.gan_ratio,
+        )
+
+    def with_experiment_dir(self):
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        base_name = f"{timestamp}-{self.dataset}-{self.model}-seed{self.seed}"
+        experiment_dir = self._unique_experiment_dir(base_name)
+        return replace(self, experiment_dir=experiment_dir)
+
+    @classmethod
+    def _unique_experiment_dir(cls, base_name):
+        experiment_dir = cls.experiment_root / base_name
+        suffix = 1
+        while experiment_dir.exists():
+            experiment_dir = cls.experiment_root / f"{base_name}-{suffix}"
+            suffix += 1
+        return experiment_dir
+
+    def export(self):
+        if self.experiment_dir is None:
+            raise ValueError("experiment_dir must be set before exporting config")
+
+        self.experiment_dir.mkdir(parents=True, exist_ok=True)
+        config_path = self.experiment_dir / "training_config.json"
+        config_path.write_text(json.dumps(self.to_dict(), indent=2) + "\n")
+        return config_path
+
+    def to_dict(self):
+        if self.experiment_dir is None:
+            experiment_dir = None
+        else:
+            experiment_dir = str(self.experiment_dir.relative_to(DATA_DIR))
+
+        return {
+            "dataset": self.dataset,
+            "model": self.model,
+            "seed": self.seed,
+            "lr": self.lr,
+            "num_ep": self.num_ep,
+            "gan_ratio": self.gan_ratio,
+            "data_augmentation": self.data_augmentation,
+            "experiment_dir": experiment_dir,
+        }
 
 
 def build_parser():
+    defaults = TrainingConfig()
     parser = argparse.ArgumentParser(description="Train the MNIST one-shot model")
-    parser.add_argument("--dataset", choices=["rmnist"], default="rmnist")
-    parser.add_argument("--model", choices=["resnet", "lenet"], default="resnet")
-    parser.add_argument("--seed", type=int, default=31)
-    parser.add_argument("--lr", type=float, default=3e-3)
-    parser.add_argument("--num_ep", type=int, default=301)
-    parser.add_argument("--gan_ratio", type=float, default=0)
+    parser.add_argument(
+        "--dataset", choices=TrainingConfig.supported_datasets, default=defaults.dataset
+    )
+    parser.add_argument(
+        "--model", choices=TrainingConfig.supported_models, default=defaults.model
+    )
+    parser.add_argument("--seed", type=int, default=defaults.seed)
+    parser.add_argument("--lr", type=float, default=defaults.lr)
+    parser.add_argument("--num_ep", type=int, default=defaults.num_ep)
+    parser.add_argument("--gan_ratio", type=float, default=defaults.gan_ratio)
     return parser
 
 
@@ -74,17 +151,27 @@ def statistical_ml(dataset):
     fit_and_evaluate(knn)
 
 
-def deep_learning(dataset):
+def deep_learning(dataset, config):
     dataset = preprocess_dataset(
-        dataset, seed=args.seed, gan_ratio=args.gan_ratio, data_augmentation=True
+        dataset,
+        seed=config.seed,
+        gan_ratio=config.gan_ratio,
+        data_augmentation=config.data_augmentation,
+        output_dir=config.experiment_dir,
     )
-    model, image_size = make_model(args.model)
+    model, image_size = make_model(config.model)
     fit_and_evaluate(
-        dataset, model, lr=args.lr, num_ep=args.num_ep, image_size=image_size
+        dataset,
+        model,
+        lr=config.lr,
+        num_ep=config.num_ep,
+        image_size=image_size,
+        output_dir=config.experiment_dir,
+        model_name=config.model,
     )
 
 
-def siamese_net(dataset):
+def siamese_net(dataset, config):
     """buggy"""
 
     def preprocess(dataset, data_augmentation=True):
@@ -96,7 +183,7 @@ def siamese_net(dataset):
             n_samples = 1024
             # data augmentation with Augmentor
             p = Augmentor.Pipeline()
-            p.set_seed(args.seed)
+            p.set_seed(config.seed)
             p.rotate(probability=0.5, max_left_rotation=10, max_right_rotation=10)
             p.random_distortion(
                 probability=0.8, grid_width=3, grid_height=3, magnitude=2
@@ -126,10 +213,10 @@ def siamese_net(dataset):
 
         train_x, train_y, test_x, test_y, origin_x, origin_y = dataset
         criterion = nn.BCELoss()
-        optimizer = optim.Adam(net.parameters(), lr=args.lr)
+        optimizer = optim.Adam(net.parameters(), lr=config.lr)
         batch = 128
         running_loss = 0
-        for epoch in range(args.num_ep):
+        for epoch in range(config.num_ep):
             for i in range(len(train_x) // batch):
                 idx = np.random.choice(range(len(train_x)), batch * 2)
                 x, y = train_x[idx].to(device), train_y[idx].to(device)
@@ -162,21 +249,23 @@ def siamese_net(dataset):
 
 
 def main(parsed_args=None):
-    global args
     if parsed_args is None:
         parsed_args = build_parser().parse_args()
-    args = parsed_args
+    config = TrainingConfig.from_args(parsed_args).with_experiment_dir()
+    config_path = config.export()
+    print(f"Experiment directory: {config.experiment_dir.relative_to(DATA_DIR)}")
+    print(f"Training config: {config_path.relative_to(DATA_DIR)}")
 
     # seed
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
+    np.random.seed(config.seed)
+    torch.manual_seed(config.seed)
+    torch.cuda.manual_seed(config.seed)
     torch.backends.cudnn.deterministic = True
     # dataset
-    dataset = make_train_dataset(args.dataset)
+    dataset = make_train_dataset(config.dataset)
     # statistical_ml(dataset)
-    deep_learning(dataset)
-    # siamese_net(dataset)
+    deep_learning(dataset, config)
+    # siamese_net(dataset, config)
 
 
 if __name__ == "__main__":

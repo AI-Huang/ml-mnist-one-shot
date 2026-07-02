@@ -1,3 +1,5 @@
+import json
+
 import Augmentor
 import numpy as np
 import torch
@@ -46,21 +48,26 @@ def to_image_tensors(train_x, train_y, test_x, test_y):
     return train_x, train_y, test_x, test_y
 
 
-def preprocess_dataset(dataset, seed, gan_ratio=0, data_augmentation=True):
+def preprocess_dataset(
+    dataset, seed, gan_ratio=0, data_augmentation=True, output_dir=None
+):
+    output_dir = output_dir or OUTPUT_DIR
     train_x, train_y, test_x, test_y = dataset
     train_x = train_x.reshape((-1, 28, 28, 1))
     test_x = test_x.reshape((-1, 28, 28, 1))
-    plot_samples(train_x, OUTPUT_DIR / f"origin-{seed}.png")
+    plot_samples(train_x, output_dir / f"origin-{seed}.png")
 
     if data_augmentation:
         train_x, train_y = augment_training_data(train_x, train_y, seed)
-        plot_samples(train_x[:50], OUTPUT_DIR / "data_augmentation.png")
+        plot_samples(train_x[:50], output_dir / "data_augmentation.png")
 
     train_x, train_y = add_gan_samples(train_x, train_y, seed, gan_ratio)
     return to_image_tensors(train_x, train_y, test_x, test_y)
 
 
-def fit_and_evaluate(dataset, net, lr, num_ep, image_size=224):
+def fit_and_evaluate(
+    dataset, net, lr, num_ep, image_size=224, output_dir=None, model_name=None
+):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     net = net.to(device)
     train_x, train_y, test_x, test_y = dataset
@@ -69,6 +76,7 @@ def fit_and_evaluate(dataset, net, lr, num_ep, image_size=224):
     optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.001)
     batch = 64
     running_loss = 0
+    train_losses = []
     for epoch in range(num_ep):
         for i in range(len(train_x) // batch):
             idx = np.random.choice(range(len(train_x)), batch)
@@ -85,6 +93,7 @@ def fit_and_evaluate(dataset, net, lr, num_ep, image_size=224):
             running_loss = 0.99 * running_loss + 0.01 * train_loss
         if epoch % 20 == 0:
             print(running_loss)
+            train_losses.append({"epoch": epoch, "running_loss": running_loss})
 
     batch = 100
     preds = []
@@ -95,4 +104,19 @@ def fit_and_evaluate(dataset, net, lr, num_ep, image_size=224):
                 x = F.interpolate(x, size=image_size)
             out = net(x)
             preds.extend(out.argmax(1).cpu().numpy().tolist())
-    print("accuracy: %.4f" % accuracy_score(test_y.cpu().numpy().tolist(), preds))
+    accuracy = accuracy_score(test_y.cpu().numpy().tolist(), preds)
+    print("accuracy: %.4f" % accuracy)
+
+    results = {
+        "accuracy": accuracy,
+        "final_running_loss": running_loss,
+        "train_losses": train_losses,
+    }
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(net.state_dict(), output_dir / "model.pt")
+        (output_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+        print("Model weights: model.pt")
+        print("Results: results.json")
+
+    return results
