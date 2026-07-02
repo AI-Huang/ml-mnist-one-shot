@@ -17,6 +17,17 @@ from datasets.rmnist import make_dataset
 from models.nets import MnistResNet, SiameseNet
 from tools.gan_augment import gan_augment
 
+args = None
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(description="Train the MNIST one-shot model")
+    parser.add_argument("--seed", type=int, default=31)
+    parser.add_argument("--lr", type=float, default=3e-3)
+    parser.add_argument("--num_ep", type=int, default=301)
+    parser.add_argument("--gan_ratio", type=float, default=0)
+    return parser
+
 
 def plot_samples(samples, path):
     plt.figure()
@@ -220,7 +231,12 @@ def siamese_net(dataset):
     fit_and_evaluate(dataset, SiameseNet())
 
 
-def main():
+def main(parsed_args=None):
+    global args
+    if parsed_args is None:
+        parsed_args = build_parser().parse_args()
+    args = parsed_args
+
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -234,10 +250,4 @@ def main():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, default=31)
-    parser.add_argument("--lr", type=float, default=3e-3)
-    parser.add_argument("--num_ep", type=int, default=301)
-    parser.add_argument("--gan_ratio", type=float, default=0)
-    args = parser.parse_args()
     main()
