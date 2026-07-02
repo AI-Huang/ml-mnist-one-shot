@@ -75,10 +75,11 @@ def fit_and_evaluate(
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.001)
     batch = 64
+    steps_per_epoch = max(1, len(train_x) // batch)
     running_loss = 0
     train_losses = []
     for epoch in range(num_ep):
-        for i in range(len(train_x) // batch):
+        for i in range(steps_per_epoch):
             idx = np.random.choice(range(len(train_x)), batch)
             x = train_x[idx].to(device)
             if image_size is not None:

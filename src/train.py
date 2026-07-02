@@ -46,11 +46,17 @@ class TrainingConfig:
             lr=args.lr,
             num_ep=args.num_ep,
             gan_ratio=args.gan_ratio,
+            data_augmentation=args.data_augmentation,
         )
 
     def with_experiment_dir(self):
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        base_name = f"{timestamp}-{self.dataset}-{self.model}-seed{self.seed}"
+        augmentation = "aug" if self.data_augmentation else "noaug"
+        gan_ratio = str(self.gan_ratio).replace(".", "p")
+        base_name = (
+            f"{timestamp}-{self.dataset}-{self.model}-{augmentation}"
+            f"-gan{gan_ratio}-seed{self.seed}"
+        )
         experiment_dir = self._unique_experiment_dir(base_name)
         return replace(self, experiment_dir=experiment_dir)
 
@@ -103,6 +109,11 @@ def build_parser():
     parser.add_argument("--lr", type=float, default=defaults.lr)
     parser.add_argument("--num_ep", type=int, default=defaults.num_ep)
     parser.add_argument("--gan_ratio", type=float, default=defaults.gan_ratio)
+    parser.add_argument(
+        "--data-augmentation",
+        action=argparse.BooleanOptionalAction,
+        default=defaults.data_augmentation,
+    )
     return parser
 
 
